@@ -8,6 +8,8 @@
 #include "math.c"
 #include "platform_common.c"
 
+#define FPS 60
+
 typedef struct {
 	// Platform non-specific part
 	int width, height;
@@ -26,7 +28,7 @@ global_variable Input input;
 #include "game.c"
 
 
-LRESULT window_callback(HWND window, UINT message, WPARAM wparam, LPARAM lparam) {
+LRESULT CALLBACK window_callback(HWND window, UINT message, WPARAM wparam, LPARAM lparam) {
 	LRESULT result = 0;
 	switch(message) {
 		case WM_CLOSE:
@@ -96,7 +98,7 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	
 	RegisterClassA(&window_class);
 	
-	HWND window = CreateWindowExA(0, window_class.lpszClassName, "Breakout v0.0.1", WS_VISIBLE | WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, 0, 0, 0, 0);
+	HWND window = CreateWindowExA(0, window_class.lpszClassName, "Break Arcade Games Out", WS_VISIBLE | WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, 0, 0, 0, 0);
 	HDC hdc = GetDC(window);
 	
 	LARGE_INTEGER last_counter;
@@ -106,7 +108,7 @@ int CALLBACK WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 	QueryPerformanceFrequency(&frequency_counter_large);
 	f32 frequency_counter = (f32)frequency_counter_large.QuadPart;
 	
-	f32 last_dt = 0.01666f;
+	f32 last_dt = 1 / FPS;
 	
 	while(running) {
 		// Input

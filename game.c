@@ -30,45 +30,13 @@ int next_block;
 v2 arena;
 v2 arena_half_size;
 
-bool aabb_vs_aabb(v2 p1, v2 half_size1, v2 p2, v2 half_size2) {
-	return p1.y + half_size1.y > p2.y - half_size2.y
-		&& p1.y - half_size1.y < p2.y - half_size2.y
-		&& p1.x + half_size1.x > p2.x - half_size2.x
-		&& p1.x - half_size1.x < p2.x - half_size2.x;
-}
-
-inline void do_block_vs_ball_collision(Block *block, v2 block_half_size, v2 ball_p, v2 ball_half_size) {
-	bool collide_y_up = block->p.y - block_half_size.y < ball_p.y + ball_half_size.y;
-	bool collide_y_down = block->p.y + block_half_size.y > ball_p.y - ball_half_size.y;
-	bool collide_x_left = block->p.x - block_half_size.x < ball_p.x + ball_half_size.x;
-	bool collide_x_right = block->p.x + block_half_size.x > ball_p.x - ball_half_size.y;
-	
-	if(collide_y_up && collide_y_down && collide_x_left && collide_x_right) {
-		if(collide_x_right) {
-			ball_dp.x *= -1;
-			ball_p.x = block->p.x + block_half_size.x;
-		}
-		else if(collide_x_left) {
-			ball_dp.x *= -1;
-			ball_p.x = block->p.x - block_half_size.x;
-		}
-		
-		if(collide_y_up) {
-			ball_dp.y *= -1;
-			ball_p.y = block->p.y + block_half_size.y;
-		}
-		else if(collide_y_down) {
-			ball_dp.y *= -1;
-			ball_p.y = block->p.y - block_half_size.y;
-		}
-	}
-}
-
+#include "collision.c"
 
 internal void simulate_game(Input *input, float dt) {
 	if(!initialized) {
 		initialized = true;
 		ball_dp.y = -30;
+		ball_p.x = 75;
 		ball_p.y = 40;
 		ball_half_size = (v2){.75, .75};
 		
@@ -104,13 +72,14 @@ internal void simulate_game(Input *input, float dt) {
 	player_dp.x = (player_new.x - player_p.x)/dt;
 	player_p.x = player_new.x;
 	
+    v2 old_ball_p = ball_p;
 	ball_p = add_v2(ball_p, mul_v2(ball_dp, dt));
 	
 	// Robustness: Subtract that the ball already moved to get to the colliding position
 	if(ball_dp.y < 0 && aabb_vs_aabb(player_p, player_half_size, ball_p, ball_half_size)) {
 		// Player collision with ball
 		ball_dp.y *= -1;
-		ball_dp.x += player_dp.x * .75f;
+		ball_dp.x += player_dp.x * .5f;
 		ball_p.y = player_p.y + player_half_size.y;
 	}
 	else if (ball_p.x + ball_half_size.x > arena_half_size.x) {
@@ -133,9 +102,7 @@ internal void simulate_game(Input *input, float dt) {
 	clear_screen_and_draw_rect((v2){0, 0}, arena_half_size, 0x551100, 0x220500);
 	for(Block *block = blocks; block != blocks + array_count(blocks); block++) {
 		if(!block->life) continue;
-		if(aabb_vs_aabb(block->p, block_half_size, ball_p, ball_half_size)) {
-			
-		}
+		do_block_vs_ball_collision(block, block_half_size, ball_p, ball_half_size);
 		draw_rect(block->p, block_half_size, block->color);
 	}
 	
